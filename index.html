@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            margin: 0;
+            padding: 16px;
+            background-color: #f0f4f8;
+            min-height: 100vh;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin: 16px auto;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            color: #2d3748;
+            text-align: center;
+            margin: 16px 0;
+            font-size: 24px;
+            line-height: 1.3;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        input {
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            width: 100%;
+            box-sizing: border-box;
+            -webkit-appearance: none;
+        }
+
+        button {
+            background-color: #4f46e5;
+            color: white;
+            border: none;
+            padding: 16px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin: 8px 0;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .setup-container {
+            text-align: left;
+            margin-bottom: 20px;
+        }
+
+        .setup-container label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 16px;
+            line-height: 1.4;
+        }
+
+        .rounds-input {
+            width: 100%;
+            max-width: 120px;
+        }
+
+        .score-display {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 20px 0;
+            font-size: 16px;
+        }
+
+        .score {
+            padding: 12px;
+            border-radius: 8px;
+            background-color: #e5e7eb;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .question {
+            font-size: 18px;
+            line-height: 1.5;
+            color: #1a365d;
+            margin: 20px 0;
+            min-height: 60px;
+            word-wrap: break-word;
+        }
+
+        .question-points {
+            display: inline-block;
+            padding: 4px 8px;
+            background-color: #fef3c7;
+            border-radius: 4px;
+            margin-top: 8px;
+            font-size: 14px;
+            color: #92400e;
+        }
+
+        .answer-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .correct-btn {
+            background-color: #10b981;
+        }
+
+        .incorrect-btn {
+            background-color: #ef4444;
+        }
+
+        .winner-announcement {
+            text-align: center;
+            font-size: 20px;
+            color: #1a365d;
+            margin: 20px 0;
+            padding: 16px;
+            background-color: #dbeafe;
+            border-radius: 8px;
+            word-wrap: break-word;
+        }
+
+        .current-turn {
+            background-color: #dbeafe;
+            border: 2px solid #3b82f6;
+        }
+
+        .game-status {
+            text-align: center;
+            margin: 16px 0;
+            font-size: 16px;
+            color: #4b5563;
+        }
+
+        .error-message {
+            color: #ef4444;
+            font-size: 14px;
+            margin-top: 8px;
+            line-height: 1.4;
+        }
+
+        button:disabled {
+            background-color: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        .attribution {
+            text-align: center;
+            font-size: 12px;
+            margin-top: 16px;
+            color: #64748b;
+        }
+
+        .attribution a {
+            color: #4f46e5;
+            text-decoration: none;
+        }
+        .hidden {display: none;}
+    </style>
+</head>
+<body>
+    <h1>Couples Connection Game</h1>
+    <div class="card">
+        <div class="setup-container" id="setup">
+            
+            <div class="input-group">
+                <input type="text" id="player1" placeholder="Player 1's name" />
+                <input type="text" id="player2" placeholder="Player 2's name" />
+            </div>
+            
+            <label for="rounds">How many questions would you like to play? (2-60, even numbers only):</label>
+            <input type="number" id="rounds" class="rounds-input" min="2" max="60" value="10" step="2">
+            <div id="errorMessage" class="error-message hidden">Please enter an even number between 2 and 60</div>
+
+            <button onclick="validateAndStart()">Start Game</button>
+        </div>
+        <div id="gameContent" class="hidden">
+            <div class="score-display">
+                <div class="score" id="score1">Player 1: 0 points</div>
+                <div class="score" id="score2">Player 2: 0 points</div>
+            </div>
+            <div class="game-status" id="gameStatus">Question 1 of 10</div>
+            <button id="questionBtn" onclick="generateQuestion()">Generate Question</button>
+            <div class="question" id="questionText"></div>
+            <div class="answer-buttons hidden" id="answerButtons">
+                <button class="correct-btn" onclick="handleAnswer(true)">Correct Answer!</button>
+                <button class="incorrect-btn" onclick="handleAnswer(false)">Wrong Answer (0 points)</button>
+            </div>
+            <div class="winner-announcement hidden" id="winnerAnnouncement"></div>
+            <button id="playAgainBtn" class="hidden" onclick="playAgain()">Play Again</button>
+        </div>
+    </div>
+    <div class="attribution">By <a href="https://thelenspodcast.org/about" target="_blank">Denis M. Kitchen, LMHC</a>. 
+        Based on <a href="https://content.randomhouse.com/assets/9781101902912/view.php?id=mmw003" target="_blank">Love Mapping</a> 
+        in <a href="https://a.co/d/7lbASZI" target="_blank"><i>Seven Principles for Making Marriage Work</i></a> 
+        by John Gottman and Nan Silver.</div>
+    <script>
+        // Previous questions array and variables remain the same
+        const questions = [
+        { text: "Name my two closest friends.", points: 2 },
+            { text: "What is my favorite musical group, composer, or instrument? ", points: 2 },
+            { text: "What was I wearing when we first met?", points: 2 },
+            { text: "Name one of my hobbies?", points: 3 },
+            { text: "Where was I born?", points: 1 },
+            { text: "What stresses am I facing right now?", points: 4 },
+            { text: "Describe in detail what I did today, or yesterday?", points: 4 },
+            { text: "When is my birthday?", points: 1 },
+            { text: "What is the date of our anniversary?", points: 1 },
+            { text: "Who is my favorite relative?", points: 2 },
+            { text: "What is my fondest unrealized dream?", points: 5 },
+            { text: "What is my favorite website?", points: 2 },
+            { text: "What is one of my greatest fears or disaster scenarios?", points: 3 },
+            { text: "What is my favorite time of day for lovemaking?", points: 3 },
+            { text: "What makes me feel most competent?", points: 4 },
+            { text: "What turns me on sexually?", points: 3 },
+            { text: "What is my favorite meal?", points: 2 },
+            { text: "What is my favorite way to spend an evening?", points: 2 },
+            { text: "What is my favorite color?", points: 1 },
+            { text: "What personal improvements do I want to make in my life?", points: 4 },
+
+            { text: "What kind of present would I like best?.", points: 2 },
+            { text: "What was one of my best childhood experiences? ", points: 2 },
+            { text: "What was my favorite vacation?", points: 2 },
+            { text: "What is one of my favorite ways to relax?", points: 4 },
+            { text: "Who is my greatest source of support (other than you)?", points: 3 },
+            { text: "What is my favorite sport?", points: 2 },
+            { text: "What do I most like to do with time off?", points: 2 },
+            { text: "What is one of my favorite weekend activities?", points: 2 },
+            { text: "What is my dream getaway place?", points: 3 },
+            { text: "What is my favorite movie?", points: 2 },
+            { text: "What are some of the important events coming up in my life? How do I feel about them?", points: 4 },
+            { text: "What are some of my favorite ways to work out?", points: 2 },
+            { text: "Who was my best friend in childhood?", points: 3 },
+            { text: "What is one of my favorite magazines?", points: 2 },
+            { text: "Name one of my major rivals or \"enemies\".", points: 3 },
+            { text: "What would I consider my ideal job?", points: 4 },
+            { text: "What do I fear the most?", points: 4 },
+            { text: "Who is my least favorite relative?", points: 3 },
+            { text: "What is my favorite holiday?", points: 2 },
+            { text: "What kinds of books do I most like to read?", points: 3 },
+
+            { text: "What is my favorite TV show.", points: 2 },
+            { text: "Which side of the bed do I prefer? ", points: 2 },
+            { text: "What am I most sad about?", points: 4 },
+            { text: "Name one of my concerns or worries?", points: 4 },
+            { text: "What medical problems do I worry about?", points: 2 },
+            { text: "What was my most embarrassing moment?", points: 3 },
+            { text: "What was my worst childhood experience?", points: 3 },
+            { text: "Name two of the people I most admire.", points: 4 },
+            { text: "Name my major rival or enemy?", points: 3 },
+            { text: "Of all the people we both know, who do I like the least?", points: 3 },
+            { text: "What is one of my favorite desserts?", points: 2 },
+            { text: "What is my social security number?", points: 2 },
+            { text: "Name one of my favorite novels?", points: 2 },
+            { text: "What is my favorite restaurant?", points: 2 },
+            { text: "What are two of my aspirations, hopes, wishes?", points: 4 },
+            { text: "Do l have a secret ambition? What is it?", points: 4 },
+            { text: "What foods do I hate?", points: 2 },
+            { text: "What is my favorite animal?", points: 2 },
+            { text: "What is my favorite song?", points: 1 },
+            { text: "Which sports team is my favorite?", points: 2 }
+        ];
+
+        let currentPlayer = 1;
+        let scores = [0, 0];
+        let currentQuestion = 0;
+        let totalQuestions = 10;
+        let availableQuestions = [...questions];
+        let currentQuestionPoints = 0;
+
+        // Add new playAgain function
+        function playAgain() {
+            // Reset game state but keep player names
+            scores = [0, 0];
+            currentQuestion = 0;
+            currentPlayer = 1;
+            availableQuestions = [...questions];
+            currentQuestionPoints = 0;
+            
+            // Reset UI elements
+            document.getElementById('questionText').textContent = '';
+            document.getElementById('answerButtons').classList.add('hidden');
+            document.getElementById('winnerAnnouncement').classList.add('hidden');
+            document.getElementById('playAgainBtn').classList.add('hidden');
+            document.getElementById('questionBtn').classList.remove('hidden');
+            
+            // Update displays
+            updateGameStatus();
+            updateButtonText();
+            updateScores();
+        }
+
+        function validateAndStart() {
+            const roundsInput = document.getElementById('rounds');
+            const errorMessage = document.getElementById('errorMessage');
+            const value = parseInt(roundsInput.value);
+            
+            if (value % 2 !== 0 || value < 2 || value > 60) {
+                errorMessage.classList.remove('hidden');
+                return;
+            }
+
+            if (value > questions.length) {
+                errorMessage.textContent = `Maximum questions available: ${Math.floor(questions.length/2)*2}`;
+                errorMessage.classList.remove('hidden');
+                return;
+            }
+
+            totalQuestions = value;
+            availableQuestions = [...questions];
+            startGame();
+        }
+
+        function startGame() {
+            document.getElementById('setup').classList.add('hidden');
+            document.getElementById('gameContent').classList.remove('hidden');
+            updateGameStatus();
+        }
+
+        function generateQuestion() {
+            if (availableQuestions.length === 0) {
+                availableQuestions = [...questions];
+            }
+            
+            const randomIndex = Math.floor(Math.random() * availableQuestions.length);
+            const selectedQuestion = availableQuestions[randomIndex];
+            currentQuestionPoints = selectedQuestion.points;
+            
+            const questionDisplay = document.getElementById('questionText');
+            questionDisplay.innerHTML = `${selectedQuestion.text} <span class="question-points">${selectedQuestion.points} point${selectedQuestion.points > 1 ? 's' : ''}</span>`;
+            
+            const correctBtn = document.querySelector('.correct-btn');
+            correctBtn.textContent = `Correct Answer! (+${selectedQuestion.points} point${selectedQuestion.points > 1 ? 's' : ''})`;
+            
+            availableQuestions.splice(randomIndex, 1);
+            
+            document.getElementById('answerButtons').classList.remove('hidden');
+            document.getElementById('questionBtn').disabled = true;
+        }
+
+        function updateGameStatus() {
+            gameStatus.textContent = `Question ${currentQuestion + 1} of ${totalQuestions}`;
+        }
+
+        function updateButtonText() {
+            const player1 = document.getElementById('player1').value || 'Player 1';
+            const player2 = document.getElementById('player2').value || 'Player 2';
+            const asker = currentPlayer === 1 ? player1 : player2;
+            const answerer = currentPlayer === 1 ? player2 : player1;
+            questionBtn.textContent = `${asker} asks ${answerer} a question`;
+        }
+
+        function updateScores() {
+            const player1 = document.getElementById('player1').value || 'Player 1';
+            const player2 = document.getElementById('player2').value || 'Player 2';
+            const score1 = document.getElementById('score1');
+            const score2 = document.getElementById('score2');
+            
+            score1.textContent = `${player1}: ${scores[0]} points`;
+            score2.textContent = `${player2}: ${scores[1]} points`;
+            
+            score1.classList.toggle('current-turn', currentPlayer === 1);
+            score2.classList.toggle('current-turn', currentPlayer === 2);
+        }
+
+        function announceWinner() {
+            const player1 = document.getElementById('player1').value || 'Player 1';
+            const player2 = document.getElementById('player2').value || 'Player 2';
+            
+            winnerAnnouncement.classList.remove('hidden');
+            questionBtn.classList.add('hidden');
+            document.getElementById('playAgainBtn').classList.remove('hidden');
+            
+            if (scores[0] > scores[1]) {
+                winnerAnnouncement.textContent = `🎉 ${player1} wins with ${scores[0]} points! 🎉`;
+            } else if (scores[1] > scores[0]) {
+                winnerAnnouncement.textContent = `🎉 ${player2} wins with ${scores[1]} points! 🎉`;
+            } else {
+                winnerAnnouncement.textContent = `🎉 It's a tie! You both win with ${scores[0]} points! 🎉`;
+            }
+        }
+
+        function handleAnswer(isCorrect) {
+            const answeringPlayer = currentPlayer === 1 ? 1 : 0;
+            if (isCorrect) {
+                scores[answeringPlayer] += currentQuestionPoints;
+            }
+            
+            currentQuestion++;
+            
+            questionBtn.disabled = false;
+            answerButtons.classList.add('hidden');
+            questionText.textContent = '';
+            
+            if (currentQuestion >= totalQuestions) {
+                announceWinner();
+            } else {
+                currentPlayer = currentPlayer === 1 ? 2 : 1;
+                updateButtonText();
+                updateGameStatus();
+            }
+            
+            updateScores();
+        }
+
+        document.getElementById('player1').addEventListener('input', () => {
+            updateButtonText();
+            updateScores();
+        });
+        document.getElementById('player2').addEventListener('input', () => {
+            updateButtonText();
+            updateScores();
+        });
+
+        /*document.getElementById('rounds').addEventListener('input', function() {
+            let value = parseInt(this.value);
+            if (value % 2 !== 0) {
+                this.value = Math.floor(value / 2) * 2;
+            }
+        });*/
+
+        updateButtonText();
+        updateScores();
+
+    </script>
+</body>
+</html>
